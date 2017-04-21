@@ -1,0 +1,231 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+#   Insectos_Main.py por:
+#   Flavio Danesse <fdanesse@gmail.com>
+#   CeibalJAM! - Uruguay - Plan Ceibal
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+import pygame
+from pygame.locals import *
+
+import gc
+gc.enable()
+
+import sys, os
+
+import CeibalJAM_Lib
+from CeibalJAM_Lib.JAMElipseButton import JAMElipseButton
+from CeibalJAM_Lib.JAMDialog import JAMDialog
+
+from JAMatrix import JAMatrix
+from CucaraSims.CucaraSims import CucaraSims_Main
+from Bichos_Cantores.Bichos_Cantores_Main import Bichos_Cantores_Main
+from Bicho import Bicho
+
+cucarasims_imagen = os.getcwd() + "/CucaraSims/CUCARACHA/Imagenes/logo.png"
+bichos_cantores_imagen = os.getcwd() + "/Bichos_Cantores/Iconos/logo.png"
+imagenes_bichos = os.getcwd() + "/Imagenes_Bichos/"
+
+RESOLUCION_MONITOR = (1200,900)
+
+class Insectos_Main():
+	'''Ventana de Pruebas para tu botón '''
+	def __init__(self):
+		pygame.init()
+		pygame.display.set_mode(RESOLUCION_MONITOR , 0, 0)
+		self.ventana = None
+		self.widgets = None
+		self.reloj = None
+		self.fondo = None
+		self.bichos_cantores = None
+		self.cucarasims = None
+		self.JAMatrix = None
+		self.mensaje = None
+		self.dialog_cerrar = None
+		self.sonido_select = None
+		self.sonido_ambiente = None
+
+		# Bichos en pantalla
+		self.sonido_bicho = None
+		self.imagenes_bicho = None
+		self.Bichos = None
+		self.area_visible = None
+		self.contador = 0
+		self.estado = None
+
+		self.setup()
+		self.Run()
+
+	def descarga_todo(self):
+		#self.ventana = None
+		self.widgets = None
+		self.reloj = None
+		self.fondo = None
+		#self.bichos_cantores = None
+		#self.cucarasims = None
+		#self.JAMatrix = None
+		self.mensaje = None
+		self.dialog_cerrar = None
+		self.sonido_select = None
+		self.sonido_ambiente = None
+
+		# Bichos en pantalla
+		self.sonido_bicho = None
+		self.imagenes_bicho = None
+		self.Bichos = None
+		self.area_visible = None
+		self.contador = 0
+		self.estado = None
+
+	def Run(self):
+		self.estado = "Insectos"
+		pygame.display.set_caption("Insectos.activity (Versión 1) - CeibalJAM! - Uruguay - 2010")
+		self.sonido_ambiente.play(-1)
+		self.ventana.blit(self.fondo, (0,0))
+
+		while len(self.Bichos.sprites()) < 15:
+			self.Bichos.add(Bicho(self))
+
+		self.Bichos.draw(self.ventana)
+		self.widgets.draw(self.ventana)
+		pygame.display.update()
+		pygame.time.wait(2)
+		while self.estado == "Insectos":
+			self.reloj.tick(35)
+
+			if list(self.mensaje):
+				self.pause_menu()
+
+			cambios=[]
+			self.Bichos.clear(self.ventana, self.fondo)
+			self.widgets.clear(self.ventana, self.fondo)
+			self.Bichos.update()
+			self.widgets.update()
+			cambios.extend ( self.Bichos.draw(self.ventana) )
+			cambios.extend ( self.widgets.draw(self.ventana) )
+			
+			self.handle_event()
+			pygame.display.update(cambios)
+
+
+	def pause_menu(self):
+	# pausa el juego y reproduce mensajes emergentes
+		while list(self.mensaje):
+			self.reloj.tick(35)
+			cambios=[]
+			self.mensaje.clear(self.ventana, self.fondo)
+			self.mensaje.update()
+			cambios.extend ( self.mensaje.draw(self.ventana) )
+			self.handle_event()
+			pygame.display.update(cambios)
+
+	def setup(self):
+		#pygame.init()
+		#pygame.display.set_mode(RESOLUCION_MONITOR , 0, 0)
+		pygame.event.set_blocked([JOYAXISMOTION, JOYBALLMOTION, JOYHATMOTION, JOYBUTTONUP, JOYBUTTONDOWN,
+					KEYUP, VIDEORESIZE, VIDEOEXPOSE, USEREVENT, QUIT, ACTIVEEVENT]) # bloqueados
+		pygame.event.set_allowed([MOUSEMOTION, MOUSEBUTTONUP, MOUSEBUTTONDOWN, KEYDOWN]) # permitidos
+		pygame.mixer.init(44100, -16, 2, 2048)
+		pygame.mixer.music.set_volume(1.0)
+
+		if not self.ventana: self.ventana = pygame.display.get_surface()
+		if not self.widgets: self.widgets = pygame.sprite.OrderedUpdates()
+		if not self.sonido_ambiente: self.sonido_ambiente = pygame.mixer.Sound("Sonidos/moscas.ogg")
+		
+		if not self.area_visible: self.area_visible = pygame.Rect(35,35,RESOLUCION_MONITOR[0]-70,RESOLUCION_MONITOR[1]-70) 
+		if not self.imagenes_bicho:
+			self.imagenes_bicho = [pygame.transform.rotate(pygame.image.load(imagenes_bichos+"escarabajo1.png"), -90),
+			pygame.transform.rotate(pygame.image.load(imagenes_bichos+"escarabajo2.png"), -90),
+			pygame.transform.rotate(pygame.image.load(imagenes_bichos+"escarabajo3.png"), -90),
+			pygame.transform.rotate(pygame.image.load(imagenes_bichos+"escarabajo4.png"), -90),
+			pygame.transform.rotate(pygame.image.load(imagenes_bichos+"cucaracha1.png"), -90),
+			pygame.transform.rotate(pygame.image.load(imagenes_bichos+"cucaracha2.png"), -90),]
+
+		if not self.Bichos: self.Bichos = pygame.sprite.OrderedUpdates() 
+
+		if not self.bichos_cantores: self.bichos_cantores = Bichos_Cantores_Main(self)
+		if not self.cucarasims: self.cucarasims = CucaraSims_Main(self)
+		if not self.JAMatrix: self.JAMatrix = JAMatrix(self.ventana)
+		if not self.sonido_select: self.sonido_select = pygame.mixer.Sound("CeibalJAM_Lib/select.ogg")
+
+		# Boton CucaraSims
+		boton = JAMElipseButton(imagen=cucarasims_imagen, tamanio_imagen=(210,77), texto="", tamanio_panel=(250, 180))
+		boton.connect(callback=self.get_cucarasims, sonido_select=self.sonido_select)
+		boton.set_posicion(punto=(300,10))
+		self.widgets.add(boton)
+
+		# Boton de Bichos Cantores
+		boton = JAMElipseButton(imagen=bichos_cantores_imagen, tamanio_imagen=(128,77), texto="", tamanio_panel=(250, 180))
+		boton.connect(callback=self.get_bichos_cantores, sonido_select=self.sonido_select)
+		boton.set_posicion(punto=(300,300))
+		self.widgets.add(boton)
+
+		# Boton Salir
+		boton = JAMElipseButton(texto="Salir", tamanio_panel=(250, 180), tamanio_de_letra=60)
+		boton.connect(callback=self.selecciona_mensaje_cerrar, sonido_select=self.sonido_select)
+		boton.set_posicion(punto=(300,590))
+		self.widgets.add(boton)
+
+		if not self.reloj: self.reloj = pygame.time.Clock()
+		if not self.fondo: self.fondo = self.get_fondo(color=(230,221,213,1), tamanio=RESOLUCION_MONITOR) # superficie
+		if not self.mensaje: self.mensaje = pygame.sprite.OrderedUpdates()
+		if not self.dialog_cerrar:
+			self.dialog_cerrar = JAMDialog(mensaje="¿Deseas Salir?", resolucion_monitor=RESOLUCION_MONITOR)
+			self.dialog_cerrar.boton_aceptar.connect(callback=self.salir, sonido_select=self.sonido_select)
+			self.dialog_cerrar.boton_cancelar.connect(callback=self.deselecciona_mensaje, sonido_select=self.sonido_select)
+
+	def deselecciona_mensaje(self):
+	# cierra mensaje emergente
+		self.mensaje.clear(self.ventana, self.fondo)
+		pygame.display.update()
+		self.mensaje = pygame.sprite.OrderedUpdates()
+
+	def selecciona_mensaje_cerrar(self):
+	# Mensaje cerrar el juego
+		pygame.event.clear()
+		self.deselecciona_mensaje()
+		self.mensaje = self.dialog_cerrar
+
+	# --------------------- Ejecución de Juegos --------------------------------
+	def get_cucarasims(self):
+		pygame.event.clear()
+		self.sonido_ambiente.stop()
+		if pygame.mixer.music.get_busy():
+			pygame.mixer.music.stop()
+		#self.cucarasims.Run()
+		self.cucarasims.precarga(self.JAMatrix)
+		self.estado = "CucaraSims"
+
+	def get_bichos_cantores(self):
+		pygame.event.clear()
+		self.sonido_ambiente.stop()
+		if pygame.mixer.music.get_busy():
+			pygame.mixer.music.stop()
+		self.bichos_cantores.precarga(self.JAMatrix)
+		self.estado = "Bichos_Cantores"
+	# --------------------- Ejecución de Juegos --------------------------------
+
+	def get_fondo(self, color=(100,100,100,1), tamanio=(800,600)):
+		superficie = pygame.Surface( tamanio, flags=HWSURFACE )
+		superficie.fill(color)
+		return superficie
+
+	def handle_event(self):
+		for event in pygame.event.get():
+			if event.type == pygame.KEYDOWN:
+				teclas = pygame.key.get_pressed()
+				if teclas[pygame.K_ESCAPE]

@@ -1,0 +1,7 @@
+[Activity]
+name = Insectos
+activity_version = 1
+service_name = org.laptop.Insectos
+icon = CucaraSims
+show_launcher = yes
+class = InsectosActivity.InsectosActivity
